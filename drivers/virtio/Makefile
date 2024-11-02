@@ -9,6 +9,7 @@ virtio_msg_transport-$(CONFIG_VIRTIO_MSG_USER) += virtio_msg_user.o
 obj-$(CONFIG_VIRTIO_MSG) += virtio_msg_transport.o
 obj-$(CONFIG_VIRTIO_MSG_LOOPBACK) += virtio_msg_loopback.o
 obj-$(CONFIG_VIRTIO_MSG_FFA) += virtio_msg_ffa.o
+obj-$(CONFIG_VIRTIO_MSG_AMP) += virtio_msg_amp.o
 obj-$(CONFIG_VIRTIO_PCI) += virtio_pci.o
 virtio_pci-y := virtio_pci_modern.o virtio_pci_common.o
 virtio_pci-$(CONFIG_VIRTIO_PCI_LEGACY) += virtio_pci_legacy.o

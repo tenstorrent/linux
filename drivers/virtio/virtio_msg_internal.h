@@ -44,6 +44,7 @@ struct virtio_msg_device {
 	u32 config_size;
 	u16 msg_size;
 	u16 dev_id;
+	void *priv;
 
 	struct virtio_msg *request;
 	struct virtio_msg *response;
