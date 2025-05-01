@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/dts-v1/;
+
+#include "blackhole.dtsi"
+
+/ {
+	model = "Tenstorrent Blackhole P100";
+	compatible = "tenstorrent,blackhole-p100", "tenstorrent,blackhole";
+
+	chosen {
+		bootargs = "rw console=hvc0 earlycon=sbi panic=-1 root=/dev/pmem0";
+	};
+};
