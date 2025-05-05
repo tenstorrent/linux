@@ -1,0 +1,61 @@
+name: Tenstorrent Blackhole kernel build
+
+on:
+  push:
+  pull_request:
+    paths-ignore:
+      - '.github/**'
+    branches: [ tt-blackhole ]
+
+env:
+  NUM_JOBS: 6
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: riscv
+            arch: riscv
+            defconfig: blackhole_defconfig
+            kernel: kernel
+
+    steps:
+    - name: Update install
+      run:
+        sudo apt-get update
+
+    - name: Install toolchain
+      run:
+        sudo apt-get install gcc-riscv64-linux-gnu
+      timeout-minutes: 5
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        clean: true
+
+    - name: Build kernel ${{matrix.name}}
+      run: |
+        mkdir ${{github.workspace}}/build
+        export ARCH=${{matrix.arch}}
+        export CROSS_COMPILE=riscv64-linux-gnu-
+        export DTS_SUBDIR=tenstorrent
+        export IMAGE=Image
+        make O=${{github.workspace}}/build ${{matrix.defconfig}}
+        make O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} $IMAGE modules dtbs
+        make O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+        mkdir -p ${{github.workspace}}/install/boot
+        cp ${{github.workspace}}/build/arch/${ARCH}/boot/dts/${DTS_SUBDIR}/*.dtb ${{github.workspace}}/install/boot/
+        cp ${{github.workspace}}/build/arch/${ARCH}/boot/$IMAGE ${{github.workspace}}/install/boot/${{matrix.kernel}}.img
+
+    - name: Tar build
+      run: tar -cvf ${{matrix.name}}_build.tar -C ${{github.workspace}}/install .
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{matrix.name}}_build
+        path: ${{matrix.name}}_build.tar
+        retention-days: 90
