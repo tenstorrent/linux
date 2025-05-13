@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Tenstorrent network device configuration
+#
+
+config TTETH_NET
+	tristate "Tenstorrent Blackhole Virtual Ethernet"
+	default y
+	help
+	  Say Y or M here if you want to use the Tenstorrent Blackhole Virtual 
+	  Ethernet Driver

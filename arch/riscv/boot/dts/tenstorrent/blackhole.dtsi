@@ -101,6 +101,10 @@
 			reg = <0x4000 0xe5000000 0x0 0x4b000000>;
 			no-map;
 		};
+		tteth_region: memory@4000e4e00000 {
+			reg = <0x4000 0xe4e00000 0x0 0x200000>;
+			no-map;
+		};
 	};
 
 	pmem@4000e5000000 {
@@ -134,6 +138,12 @@
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
 			riscv,ndev = <128>;
+		};
+		tteth: nic@4000e4e00000{
+			compatible = "tenstorrent,ethernet";
+			reg = <0x4000 0xe4e00000 0x0 0x200000>;
+			interrupts = <33>;
+			interrupt-parent = <&plic0>;
 		};
 	};
 };
