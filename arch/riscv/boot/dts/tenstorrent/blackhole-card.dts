@@ -12,6 +12,10 @@
 		reg = <0x4000 0x30000000 0x1 0x00000000>;
 	};
 
+	chosen {
+	    bootargs = "rw console=hvc0 earlycon=sbi panic=-1 root=/dev/vda";
+	};
+
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
