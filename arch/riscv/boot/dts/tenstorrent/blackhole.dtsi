@@ -97,19 +97,10 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-		pmem: memory@4000e5000000 {
-			reg = <0x4000 0xe5000000 0x0 0x4b000000>;
+		virtio_devices: memory@40012fc00000 {
+			reg = <0x4001 0x2fc00000 0x00 0x400000>;
 			no-map;
 		};
-		tteth_region: memory@4000e4e00000 {
-			reg = <0x4000 0xe4e00000 0x0 0x200000>;
-			no-map;
-		};
-	};
-
-	pmem@4000e5000000 {
-		compatible = "pmem-region";
-		reg = <0x4000 0xe5000000 0x0 0x4b000000>; /* 1.2 GB */
 	};
 
 	soc {
@@ -139,10 +130,16 @@
 			#address-cells = <0>;
 			riscv,ndev = <128>;
 		};
-		tteth: nic@4000e4e00000{
-			compatible = "tenstorrent,ethernet";
-			reg = <0x4000 0xe4e00000 0x0 0x200000>;
+		virtio_blk_0@40012fe00000 {
+			compatible = "virtio,mmio";
+			reg = <0x4001 0x2fe00000 0x00 0x200000>;
 			interrupts = <33>;
+			interrupt-parent = <&plic0>;
+		};
+		virtio_net_0@40012fc00000 {
+			compatible = "virtio,mmio";
+			reg = <0x4001 0x2fc00000 0x00 0x200000>;
+			interrupts = <32>;
 			interrupt-parent = <&plic0>;
 		};
 	};
