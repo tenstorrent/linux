@@ -69,6 +69,7 @@
 #include <linux/virtio_config.h>
 #include <uapi/linux/virtio_mmio.h>
 #include <linux/virtio_ring.h>
+#include <linux/delay.h>
 
 
 
@@ -87,20 +88,50 @@ struct virtio_mmio_device {
 
 	void __iomem *base;
 	unsigned long version;
+	unsigned long sw_impl;
 };
 
 /* Configuration interface */
 
+static int wait_sel_generation_update(struct virtio_device *vdev, u32 prev_sel_generation){
+	struct virtio_mmio_device *vm_dev = to_virtio_mmio_device(vdev);
+	unsigned long timeout = jiffies + msecs_to_jiffies(1000); // 1 second timeout
+	writel(prev_sel_generation + 1, vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+
+	while (readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION) == prev_sel_generation + 1) {
+	    if (time_after(jiffies, timeout)) {
+	        dev_err(&vdev->dev, "Timeout waiting for sel_generation value to update\n");
+	        return -ETIMEDOUT;
+	    }
+	    cpu_relax(); // or udelay(1), or cond_resched() if appropriate
+	}
+	return 0;
+}
+
 static int vm_get_features(struct virtio_device *vdev, u64 *features_out)
 {
 	struct virtio_mmio_device *vm_dev = to_virtio_mmio_device(vdev);
+	u32 sel_generation;
 
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	writel(1, vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES_SEL);
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		return -ETIMEDOUT;
+	}
 	*features_out = readl(vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES);
 	*features_out <<= 32;
 
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	writel(0, vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES_SEL);
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		return -ETIMEDOUT;
+	}
 	*features_out |= readl(vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES);
+	pr_err("Device Features %llx", *features_out);
 
 	return 0;
 }
@@ -108,6 +139,7 @@ static int vm_get_features(struct virtio_device *vdev, u64 *features_out)
 static int vm_finalize_features(struct virtio_device *vdev)
 {
 	struct virtio_mmio_device *vm_dev = to_virtio_mmio_device(vdev);
+	u32 sel_generation;
 
 	/* Give virtio_ring a chance to accept features. */
 	vring_transport_features(vdev);
@@ -119,13 +151,38 @@ static int vm_finalize_features(struct virtio_device *vdev)
 		return -EINVAL;
 	}
 
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	writel(1, vm_dev->base + VIRTIO_MMIO_DRIVER_FEATURES_SEL);
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		return -ETIMEDOUT;
+	}
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	writel((u32)(vdev->features >> 32),
 			vm_dev->base + VIRTIO_MMIO_DRIVER_FEATURES);
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		return -ETIMEDOUT;
+	}
 
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	writel(0, vm_dev->base + VIRTIO_MMIO_DRIVER_FEATURES_SEL);
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		return -ETIMEDOUT;
+	}
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	writel((u32)vdev->features,
 			vm_dev->base + VIRTIO_MMIO_DRIVER_FEATURES);
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		return -ETIMEDOUT;
+	}
+	pr_err("Driver Features %llx", vdev->features);
 
 	return 0;
 }
@@ -351,6 +408,7 @@ static struct virtqueue *vm_setup_vq(struct virtio_device *vdev, unsigned int in
 	struct virtqueue *vq;
 	unsigned int num;
 	int err;
+	u32 sel_generation;
 
 	if (__virtio_test_bit(vdev, VIRTIO_F_NOTIFICATION_DATA))
 		notify = vm_notify_with_data;
@@ -386,6 +444,9 @@ static struct virtqueue *vm_setup_vq(struct virtio_device *vdev, unsigned int in
 
 	vq->num_max = num;
 
+	if (vm_dev->sw_impl) {
+		sel_generation = readl(vm_dev->base + VIRTIO_MMIO_SEL_GENERATION);
+	}
 	/* Activate the queue */
 	writel(virtqueue_get_vring_size(vq), vm_dev->base + VIRTIO_MMIO_QUEUE_NUM);
 	if (vm_dev->version == 1) {
@@ -425,6 +486,10 @@ static struct virtqueue *vm_setup_vq(struct virtio_device *vdev, unsigned int in
 				vm_dev->base + VIRTIO_MMIO_QUEUE_USED_HIGH);
 
 		writel(1, vm_dev->base + VIRTIO_MMIO_QUEUE_READY);
+	}
+	if (vm_dev->sw_impl && wait_sel_generation_update(vdev, sel_generation)) {
+		err = -ETIMEDOUT;
+		goto error_new_virtqueue;
 	}
 
 	return vq;
@@ -603,6 +668,14 @@ static int virtio_mmio_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Version %ld not supported!\n",
 				vm_dev->version);
 		rc = -ENXIO;
+		goto free_vm_dev;
+	}
+
+	vm_dev->sw_impl = readl(vm_dev->base + VIRTIO_MMIO_SW_IMPL);
+	if (vm_dev->sw_impl !=0 && vm_dev->sw_impl !=1) {
+		dev_err(&pdev->dev, "SW_IMPL value must be 0 or 1, not %ld\n",
+				vm_dev->sw_impl);
+		rc = -ENODEV;
 		goto free_vm_dev;
 	}
 
