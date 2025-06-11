@@ -124,8 +124,8 @@ struct virtio_config_ops {
 			struct irq_affinity *desc);
 	void (*del_vqs)(struct virtio_device *);
 	void (*synchronize_cbs)(struct virtio_device *);
-	u64 (*get_features)(struct virtio_device *vdev);
-	void (*get_extended_features)(struct virtio_device *vdev,
+	int (*get_features)(struct virtio_device *vdev, u64 *features);
+	int (*get_extended_features)(struct virtio_device *vdev,
 				      u64 *features);
 	int (*finalize_features)(struct virtio_device *vdev);
 	const char *(*bus_name)(struct virtio_device *vdev);
@@ -264,16 +264,16 @@ static inline bool virtio_has_feature(const struct virtio_device *vdev,
 	return __virtio_test_bit(vdev, fbit);
 }
 
-static inline void virtio_get_features(struct virtio_device *vdev,
+static inline int virtio_get_features(struct virtio_device *vdev,
 				       u64 *features_out)
 {
+	virtio_features_zero(features_out);
+
 	if (vdev->config->get_extended_features) {
-		vdev->config->get_extended_features(vdev, features_out);
-		return;
+		return vdev->config->get_extended_features(vdev, features_out);
 	}
 
-	virtio_features_from_u64(features_out,
-		vdev->config->get_features(vdev));
+	return vdev->config->get_features(vdev, features_out);
 }
 
 /**
