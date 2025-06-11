@@ -394,7 +394,7 @@ EXPORT_SYMBOL_GPL(vp_modern_remove);
  *
  * Fill the specified features array with the features read from the device
  */
-void vp_modern_get_extended_features(struct virtio_pci_modern_device *mdev,
+int vp_modern_get_extended_features(struct virtio_pci_modern_device *mdev,
 				     u64 *features)
 {
 	struct virtio_pci_common_cfg __iomem *cfg = mdev->common;
@@ -408,6 +408,8 @@ void vp_modern_get_extended_features(struct virtio_pci_modern_device *mdev,
 		cur = vp_ioread32(&cfg->device_feature);
 		features[i >> 1] |= cur << (32 * (i & 1));
 	}
+
+    return 0;
 }
 EXPORT_SYMBOL_GPL(vp_modern_get_extended_features);
 
