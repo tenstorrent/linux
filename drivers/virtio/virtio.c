@@ -280,7 +280,9 @@ static int virtio_dev_probe(struct device *_d)
 	virtio_add_status(dev, VIRTIO_CONFIG_S_DRIVER);
 
 	/* Figure out what features the device supports. */
-	device_features = dev->config->get_features(dev);
+	err = dev->config->get_features(dev, &device_features);
+	if (err)
+		goto err;
 
 	/* Figure out what features the driver supports. */
 	driver_features = 0;

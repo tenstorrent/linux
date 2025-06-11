@@ -120,7 +120,7 @@ struct virtio_config_ops {
 			struct irq_affinity *desc);
 	void (*del_vqs)(struct virtio_device *);
 	void (*synchronize_cbs)(struct virtio_device *);
-	u64 (*get_features)(struct virtio_device *vdev);
+	int (*get_features)(struct virtio_device *vdev, u64 *features);
 	int (*finalize_features)(struct virtio_device *vdev);
 	const char *(*bus_name)(struct virtio_device *vdev);
 	int (*set_vq_affinity)(struct virtqueue *vq,

@@ -22,11 +22,13 @@
 
 #define VIRTIO_AVQ_SGS_MAX	4
 
-static u64 vp_get_features(struct virtio_device *vdev)
+static int vp_get_features(struct virtio_device *vdev, u64 *features)
 {
 	struct virtio_pci_device *vp_dev = to_vp_device(vdev);
 
-	return vp_modern_get_features(&vp_dev->mdev);
+	*features = vp_modern_get_features(&vp_dev->mdev);
+
+	return 0;
 }
 
 static int vp_avq_index(struct virtio_device *vdev, u16 *index, u16 *num)
