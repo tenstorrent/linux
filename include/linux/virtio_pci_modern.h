@@ -99,7 +99,7 @@ static inline void vp_iowrite64_twopart(u64 val,
 void
 vp_modern_get_driver_extended_features(struct virtio_pci_modern_device *mdev,
 				       u64 *features);
-void vp_modern_get_extended_features(struct virtio_pci_modern_device *mdev,
+int vp_modern_get_extended_features(struct virtio_pci_modern_device *mdev,
 				     u64 *features);
 void vp_modern_set_extended_features(struct virtio_pci_modern_device *mdev,
 				     const u64 *features);

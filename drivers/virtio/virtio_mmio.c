@@ -91,19 +91,18 @@ struct virtio_mmio_device {
 
 /* Configuration interface */
 
-static u64 vm_get_features(struct virtio_device *vdev)
+static int vm_get_features(struct virtio_device *vdev, u64 *features_out)
 {
 	struct virtio_mmio_device *vm_dev = to_virtio_mmio_device(vdev);
-	u64 features;
 
 	writel(1, vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES_SEL);
-	features = readl(vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES);
-	features <<= 32;
+	*features_out = readl(vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES);
+	*features_out <<= 32;
 
 	writel(0, vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES_SEL);
-	features |= readl(vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES);
+	*features_out |= readl(vm_dev->base + VIRTIO_MMIO_DEVICE_FEATURES);
 
-	return features;
+	return 0;
 }
 
 static int vm_finalize_features(struct virtio_device *vdev)
