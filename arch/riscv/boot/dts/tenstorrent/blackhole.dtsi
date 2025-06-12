@@ -97,8 +97,8 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
-		virtio_devices: memory@40012fc00000 {
-			reg = <0x4001 0x2fc00000 0x00 0x400000>;
+		virtio_devices: memory@40012fa00000 {
+			reg = <0x4001 0x2fa00000 0x00 0x600000>;
 			no-map;
 		};
 	};
@@ -140,6 +140,12 @@
 			compatible = "virtio,mmio";
 			reg = <0x4001 0x2fc00000 0x00 0x200000>;
 			interrupts = <32>;
+			interrupt-parent = <&plic0>;
+		};
+		virtio_blk_1@40012fa00000 {
+			compatible = "virtio,mmio";
+			reg = <0x4001 0x2fa00000 0x00 0x200000>;
+			interrupts = <31>;
 			interrupt-parent = <&plic0>;
 		};
 	};
