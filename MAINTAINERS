@@ -26789,6 +26789,13 @@ W:	https://virtio-mem.gitlab.io/
 F:	drivers/virtio/virtio_mem.c
 F:	include/uapi/linux/virtio_mem.h
 
+VIRTIO MSG TRANSPORT
+M:	Viresh Kumar <viresh.kumar@linaro.org>
+L:	virtualization@lists.linux.dev
+S:	Maintained
+F:	drivers/virtio/virtio_msg*
+F:	include/uapi/linux/virtio_msg*
+
 VIRTIO PMEM DRIVER
 M:	Pankaj Gupta <pankaj.gupta.linux@gmail.com>
 L:	virtualization@lists.linux.dev

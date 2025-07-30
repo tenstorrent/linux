@@ -171,6 +171,13 @@ config VIRTIO_MMIO_CMDLINE_DEVICES
 
 	 If unsure, say 'N'.
 
+config VIRTIO_MSG
+	tristate
+	select VIRTIO
+	help
+	  This enables support for Virtio message transport. This option is
+	  selected by any driver which implements the virtio message bus.
+
 config VIRTIO_DMA_SHARED_BUFFER
 	tristate
 	depends on DMA_SHARED_BUFFER
