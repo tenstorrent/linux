@@ -9,6 +9,8 @@
 #ifndef _DRIVERS_VIRTIO_MSG_INTERNAL_H
 #define _DRIVERS_VIRTIO_MSG_INTERNAL_H
 
+#include <linux/completion.h>
+#include <linux/miscdevice.h>
 #include <linux/virtio.h>
 #include <uapi/linux/virtio_msg.h>
 
@@ -52,5 +54,35 @@ void virtio_msg_unregister(struct virtio_msg_device *vmdev);
 
 void virtio_msg_prepare(struct virtio_msg *vmsg, u8 msg_id, u16 payload_size);
 int virtio_msg_event(struct virtio_msg_device *vmdev, struct virtio_msg *vmsg);
+
+/* Virtio msg userspace interface */
+struct virtio_msg_user_device;
+
+struct virtio_msg_user_ops {
+	int (*handle)(struct virtio_msg_user_device *vmudev, struct virtio_msg *vmsg);
+};
+
+/* Host side device using virtio message */
+struct virtio_msg_user_device {
+	struct virtio_msg_user_ops *ops;
+	struct miscdevice misc;
+	struct completion r_completion;
+	struct completion w_completion;
+	struct virtio_msg *vmsg;
+	struct device *parent;
+	char name[15];
+};
+
+#if IS_REACHABLE(CONFIG_VIRTIO_MSG_USER)
+int virtio_msg_user_register(struct virtio_msg_user_device *vmudev);
+void virtio_msg_user_unregister(struct virtio_msg_user_device *vmudev);
+#else
+static inline int virtio_msg_user_register(struct virtio_msg_user_device *vmudev)
+{
+	return -EOPNOTSUPP;
+}
+
+static inline void virtio_msg_user_unregister(struct virtio_msg_user_device *vmudev) {}
+#endif /* CONFIG_VIRTIO_MSG_USER */
 
 #endif /* _DRIVERS_VIRTIO_MSG_INTERNAL_H */
