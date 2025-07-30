@@ -176,7 +176,8 @@ config VIRTIO_MSG
 	select VIRTIO
 	help
 	  This enables support for Virtio message transport. This option is
-	  selected by any driver which implements the virtio message bus.
+	  selected by any driver which implements the virtio message bus, such
+	  as VIRTIO_MSG_FFA.
 
 config VIRTIO_MSG_USER
 	tristate "Userspace interface for virtio message transport"
@@ -185,6 +186,15 @@ config VIRTIO_MSG_USER
 	  This enables userspace interface for Virtio message transport. This
 	  can be used to read / write messages over virtio-msg transport from
 	  userspace.
+
+config VIRTIO_MSG_FFA
+	tristate "FF-A bus driver for virtio message transport"
+	depends on ARM_FFA_TRANSPORT
+	select VIRTIO_MSG
+	help
+	 This implements a Virtio message bus based on ARM FF-A protocol.
+
+	 If unsure, say N.
 
 config VIRTIO_DMA_SHARED_BUFFER
 	tristate
