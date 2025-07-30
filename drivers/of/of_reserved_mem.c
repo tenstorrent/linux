@@ -767,6 +767,33 @@ struct reserved_mem *of_reserved_mem_lookup(struct device_node *np)
 EXPORT_SYMBOL_GPL(of_reserved_mem_lookup);
 
 /**
+ * of_reserved_mem_lookup_by_name() - acquire reserved_mem from node name
+ * @name:	node name
+ *
+ * This function allows drivers to acquire a reference to the reserved_mem
+ * struct based on a reserved-memory node name.
+ *
+ * Returns a reserved_mem reference, or NULL on error.
+ */
+struct reserved_mem *of_reserved_mem_lookup_by_name(const char *name)
+{
+	struct device_node *np __free(device_node) =
+		of_find_node_by_path("/reserved-memory");
+	struct device_node *child __free(device_node) = NULL;
+
+	if (!np)
+		return ERR_PTR(-ENODEV);
+
+	for_each_child_of_node(np, child) {
+		if (of_node_name_eq(child, name))
+			return of_reserved_mem_lookup(child);
+	}
+
+	return ERR_PTR(-ENODEV);
+}
+EXPORT_SYMBOL_GPL(of_reserved_mem_lookup_by_name);
+
+/**
  * of_reserved_mem_region_to_resource() - Get a reserved memory region as a resource
  * @np:		node containing 'memory-region' property
  * @idx:	index of 'memory-region' property to lookup

@@ -41,6 +41,7 @@ int reserved_mem_device_init(struct device *dev, struct reserved_mem *rmem);
 void of_reserved_mem_device_release(struct device *dev);
 
 struct reserved_mem *of_reserved_mem_lookup(struct device_node *np);
+struct reserved_mem *of_reserved_mem_lookup_by_name(const char *name);
 int of_reserved_mem_region_to_resource(const struct device_node *np,
 				       unsigned int idx, struct resource *res);
 int of_reserved_mem_region_to_resource_byname(const struct device_node *np,
@@ -74,6 +75,11 @@ static inline int reserved_mem_device_init(struct device *dev,
 static inline void of_reserved_mem_device_release(struct device *pdev) { }
 
 static inline struct reserved_mem *of_reserved_mem_lookup(struct device_node *np)
+{
+	return NULL;
+}
+
+static inline struct reserved_mem *of_reserved_mem_lookup_by_name(const char *name)
 {
 	return NULL;
 }
