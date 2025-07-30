@@ -196,6 +196,15 @@ config VIRTIO_MSG_FFA
 
 	 If unsure, say N.
 
+config VIRTIO_MSG_LOOPBACK
+	tristate "Loopback bus driver for virtio message transport"
+	select VIRTIO_MSG
+	select VIRTIO_MSG_USER
+	help
+	 This implements the Loopback bus for Virtio msg transport.
+
+	 If unsure, say N.
+
 config VIRTIO_DMA_SHARED_BUFFER
 	tristate
 	depends on DMA_SHARED_BUFFER
