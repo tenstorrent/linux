@@ -615,47 +615,23 @@ static LIST_HEAD(of_rmem_assigned_device_list);
 static DEFINE_MUTEX(of_rmem_assigned_device_mutex);
 
 /**
- * of_reserved_mem_device_init_by_idx() - assign reserved memory region to
- *					  given device
+ * reserved_mem_device_init() - assign reserved memory region to given device
  * @dev:	Pointer to the device to configure
- * @np:		Pointer to the device_node with 'reserved-memory' property
- * @idx:	Index of selected region
+ * @rmem:	Pointer to the reserved memory region
  *
- * This function assigns respective DMA-mapping operations based on reserved
- * memory region specified by 'memory-region' property in @np node to the @dev
- * device. When driver needs to use more than one reserved memory region, it
- * should allocate child devices and initialize regions by name for each of
- * child device.
+ * This function assigns the @rmem reserved memory region to the @dev device.
  *
  * Returns error code or zero on success.
  */
-int of_reserved_mem_device_init_by_idx(struct device *dev,
-				       struct device_node *np, int idx)
+int reserved_mem_device_init(struct device *dev, struct reserved_mem *rmem)
 {
 	struct rmem_assigned_device *rd;
-	struct device_node *target;
-	struct reserved_mem *rmem;
 	int ret;
 
-	if (!np || !dev)
+	if (!dev || !rmem || !rmem->ops || !rmem->ops->device_init)
 		return -EINVAL;
 
-	target = of_parse_phandle(np, "memory-region", idx);
-	if (!target)
-		return -ENODEV;
-
-	if (!of_device_is_available(target)) {
-		of_node_put(target);
-		return 0;
-	}
-
-	rmem = of_reserved_mem_lookup(target);
-	of_node_put(target);
-
-	if (!rmem || !rmem->ops || !rmem->ops->device_init)
-		return -EINVAL;
-
-	rd = kmalloc(sizeof(struct rmem_assigned_device), GFP_KERNEL);
+	rd = kmalloc(sizeof(*rd), GFP_KERNEL);
 	if (!rd)
 		return -ENOMEM;
 
@@ -674,6 +650,46 @@ int of_reserved_mem_device_init_by_idx(struct device *dev,
 	}
 
 	return ret;
+}
+EXPORT_SYMBOL_GPL(reserved_mem_device_init);
+
+/**
+ * of_reserved_mem_device_init_by_idx() - assign reserved memory region to
+ *					  given device
+ * @dev:	Pointer to the device to configure
+ * @np:		Pointer to the device_node with 'reserved-memory' property
+ * @idx:	Index of selected region
+ *
+ * This function assigns respective DMA-mapping operations based on reserved
+ * memory region specified by 'memory-region' property in @np node to the @dev
+ * device. When driver needs to use more than one reserved memory region, it
+ * should allocate child devices and initialize regions by name for each of
+ * child device.
+ *
+ * Returns error code or zero on success.
+ */
+int of_reserved_mem_device_init_by_idx(struct device *dev,
+				       struct device_node *np, int idx)
+{
+	struct device_node *target;
+	struct reserved_mem *rmem;
+
+	if (!np || !dev)
+		return -EINVAL;
+
+	target = of_parse_phandle(np, "memory-region", idx);
+	if (!target)
+		return -ENODEV;
+
+	if (!of_device_is_available(target)) {
+		of_node_put(target);
+		return 0;
+	}
+
+	rmem = of_reserved_mem_lookup(target);
+	of_node_put(target);
+
+	return reserved_mem_device_init(dev, rmem);
 }
 EXPORT_SYMBOL_GPL(of_reserved_mem_device_init_by_idx);
 
