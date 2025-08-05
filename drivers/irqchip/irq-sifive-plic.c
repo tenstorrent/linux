@@ -69,6 +69,7 @@ struct plic_priv {
 	struct cpumask lmask;
 	struct irq_domain *irqdomain;
 	void __iomem *regs;
+	void __iomem *interrupt_regs;  /* Points to an array of 4 u32 registers */
 	unsigned long plic_quirks;
 	unsigned int nr_irqs;
 	unsigned long *prio_save;
@@ -383,6 +384,15 @@ static void plic_handle_irq(struct irq_desc *desc)
 	chained_irq_enter(chip, desc);
 
 	while ((hwirq = readl(claim))) {
+		// Pick which of the 4 X280 global interrupts registers to unset
+		u8 register_index = (hwirq - 5) / 32;
+
+		// Unset bit only if register_index < 4, Something is very wrong if it isn't
+		if (register_index < 4) {
+			u32 *selected_register = ((u32*) handler->priv->interrupt_regs) + register_index;
+			iowrite32(0, selected_register);
+		}
+
 		int err = generic_handle_domain_irq(handler->priv->irqdomain,
 						    hwirq);
 		if (unlikely(err)) {
@@ -556,6 +566,11 @@ static int plic_probe(struct fwnode_handle *fwnode)
 	priv->regs = regs;
 	priv->gsi_base = gsi_base;
 	priv->acpi_plic_id = id;
+
+	priv->interrupt_regs = devm_platform_ioremap_resource(to_platform_device(fwnode->dev), 1);
+	if (IS_ERR(priv->interrupt_regs)) {
+		return PTR_ERR(priv->interrupt_regs);
+	}
 
 	priv->prio_save = bitmap_zalloc(nr_irqs, GFP_KERNEL);
 	if (!priv->prio_save) {
