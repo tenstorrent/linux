@@ -12,6 +12,8 @@
 
 #include "virtio_msg_amp.h"
 
+#define VIRTIO_MSG_AMP_SIZE 64
+
 #define to_virtio_msg_amp_device(_vmdev) \
 	container_of(_vmdev, struct virtio_msg_amp_device, this_dev)
 
@@ -35,7 +37,7 @@ static int virtio_msg_amp_transfer(struct virtio_msg_device *vmdev,
 	struct virtio_msg_amp_device *vmadev = to_virtio_msg_amp_device(vmdev);
 	struct virtio_msg_amp *amp_dev = vmadev->amp_dev;
 	struct device *pdev = amp_dev->ops->get_device(amp_dev);
-	int len = 44;
+	int len = VIRTIO_MSG_AMP_SIZE;
 	int rc = 0;
 	u16 match = MK_RESP(request->type | VIRTIO_MSG_TYPE_RESPONSE, request->msg_id);
 
@@ -94,7 +96,7 @@ static const char *virtio_msg_amp_bus_info(struct virtio_msg_device *vmdev,
 	struct virtio_msg_amp *amp_dev = vmadev->amp_dev;
 	struct device *pdev = amp_dev->ops->get_device(amp_dev);
 
-	*msg_size = 44;
+	*msg_size = VIRTIO_MSG_AMP_SIZE;
 	*rev = VIRTIO_MSG_REVISION_1;
 
 	dev_info(pdev, "get bus name for dev_id=%d\n",  vmadev->dev_id);
@@ -185,7 +187,7 @@ static bool vmadev_check_rx_match(
 	//	match, vmadev->expected_response);
 
 	if (vmadev->expected_response == match ) {
-		memcpy(vmadev->response, msg, 44);
+		memcpy(vmadev->response, msg, VIRTIO_MSG_AMP_SIZE);
 		vmadev->expected_response = 0;
 		complete(&vmadev->response_done);
 		return true;
@@ -202,7 +204,7 @@ static void rx_proc_all(struct virtio_msg_amp *amp_dev) {
 	u8 *buf = amp_dev->rx_temp_buf;
 	int err;
 
-	while (spsc_recv(&amp_dev->dev2drv, buf, 44)) {
+	while (spsc_recv(&amp_dev->dev2drv, buf, VIRTIO_MSG_AMP_SIZE)) {
 		dev_dbg(pdev, "RX MSG: %40ph \n", buf);
 		msg = (struct virtio_msg*) buf;
 		dev_id =  le16_to_cpu(msg->dev_id);
