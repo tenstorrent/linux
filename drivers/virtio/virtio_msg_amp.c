@@ -71,7 +71,7 @@ static int virtio_msg_amp_transfer(struct virtio_msg_device *vmdev,
 	tx_msg(amp_dev, request, len);
 
 	if (response) {
-		if (!wait_for_it(&vmadev->response_done, 5000 * 20)) {
+		if (!wait_for_it(&vmadev->response_done, 20)) {
 			dev_err(pdev,
 			  "response wait timeout dev_id=%d, type/id=%04x\n",
 			  vmadev->dev_id, match);
