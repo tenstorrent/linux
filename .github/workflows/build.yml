@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    runs-on: tt-ubuntu-2404-large-stable
+    runs-on: tt-ubuntu-2204-large-stable
     strategy:
       matrix:
         include:
